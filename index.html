@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installing Love...</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "Outfit", system-ui, sans-serif;
+      padding: 1.5rem;
+      color: #e8e8e8;
+      transition: background 0.6s ease;
+    }
+    body.bw-phase {
+      background: #0d0d0d;
+    }
+    body.red-phase {
+      background: linear-gradient(180deg, #4a1520 0%, #2d0e14 50%, #1a080b 100%);
+    }
+    /* ----- Countdown screen ----- */
+    .countdown-screen {
+      display: none;
+      text-align: center;
+      max-width: 360px;
+    }
+    .countdown-screen.visible {
+      display: block;
+    }
+    .countdown-screen h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 1.5rem 0;
+    }
+    .countdown-timer {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 2rem;
+      color: #fff;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .countdown-timer span {
+      display: inline-block;
+      min-width: 2.2ch;
+    }
+    .countdown-labels {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+    /* ----- Proposal screen ----- */
+    .proposal-screen {
+      display: none;
+      text-align: center;
+      max-width: 380px;
+    }
+    .proposal-screen.visible {
+      display: block;
+    }
+    .proposal-screen h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 2rem 0;
+      line-height: 1.4;
+    }
+    .proposal-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      position: relative;
+      min-height: 100px;
+    }
+    .proposal-btn {
+      font-family: "Outfit", system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      border: 2px solid #444;
+    }
+    .proposal-btn.yes {
+      background: #fff;
+      color: #111;
+      border-color: #fff;
+    }
+    .proposal-btn.yes:hover {
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+    }
+    .proposal-btn.no {
+      background: #222;
+      color: #eee;
+      position: fixed;
+      transition: left 0.15s ease-out, top 0.15s ease-out;
+      z-index: 10;
+    }
+    /* ----- Install screen (B&W phase) ----- */
+    .install-screen {
+      width: 400px;
+      max-width: 100%;
+      min-height: 220px;
+      background: #0f0f0f;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      border: 1px solid #2a2a2a;
+    }
+    .install-screen h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 1.5rem 0;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .install-screen h1 .icon {
+      font-size: 1.25rem;
+    }
+    .status {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.85rem;
+      color: #a0a0a0;
+      height: 2.6em;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    .status #statusText {
+      overflow: hidden;
+      min-width: 0;
+      line-height: 1.3;
+    }
+    .status .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #666;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.4; }
+    }
+    .progress-wrap {
+      height: 8px;
+      background: #252525;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #888;
+      border-radius: 4px;
+      transition: width 0.4s ease-out;
+    }
+    .progress-pct {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      color: #707070;
+    }
+    /* ----- Complete screen (red phase) ----- */
+    .complete-wrapper {
+      position: relative;
+      display: none;
+    }
+    .complete-wrapper.visible {
+      display: block;
+    }
+    .install-screen.red-theme {
+      background: rgba(74, 21, 32, 0.95);
+      border: 1px solid rgba(180, 80, 90, 0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    .complete-screen {
+      display: none;
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+    .complete-screen.visible {
+      display: block;
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .complete-screen .check {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+    .complete-screen .check .heart {
+      font-size: 3rem;
+    }
+    .complete-screen .title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #ffd4dc;
+      margin: 0 0 0.5rem 0;
+    }
+    .complete-screen .subtitle {
+      font-size: 1rem;
+      color: #e8a0a8;
+      margin: 0 0 1.5rem 0;
+      line-height: 1.5;
+    }
+    .complete-screen .message {
+      font-size: 1.1rem;
+      color: #ffdce4;
+      line-height: 1.6;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    /* ----- Sticky notes (reddish, no overlap) ----- */
+    .sticky-notes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .sticky-note {
+      position: absolute;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #fff;
+      background: #c45c4a;
+      box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+      width: 130px;
+      opacity: 0;
+      transform: scale(0.5) rotate(-5deg);
+      animation: stickyAppear 0.6s ease-out forwards;
+      margin-left: -65px;
+      margin-top: -28px;
+    }
+    .sticky-note .heart {
+      margin-right: 0.25rem;
+    }
+    @keyframes stickyAppear {
+      to {
+        opacity: 1;
+        transform: scale(1) rotate(var(--rot, -3deg));
+      }
+    }
+  </style>
+</head>
+<body class="bw-phase" id="body">
+  <div class="countdown-screen" id="countdownScreen">
+    <h1 id="countdownTitle"></h1>
+    <div class="countdown-timer" id="countdownTimer">
+      <span id="days">00</span>:<span id="hours">00</span>:<span id="mins">00</span>:<span id="secs">00</span>
+    </div>
+    <div class="countdown-labels" id="countdownLabels"></div>
+  </div>
+
+  <div class="proposal-screen" id="proposalScreen">
+    <h1 id="proposalQuestion"></h1>
+    <div class="proposal-buttons" id="proposalButtons">
+      <button class="proposal-btn yes" id="yesBtn"></button>
+      <button class="proposal-btn no" id="noBtn"></button>
+    </div>
+  </div>
+
+  <div class="complete-wrapper" id="completeWrapper">
+    <div class="sticky-notes" id="stickyNotes"></div>
+    <div class="install-screen" id="installScreen">
+      <div class="loading-view" id="loadingView">
+        <h1 id="loaderTitle"><span id="loaderTitleText"></span> <span class="icon">♥</span></h1>
+        <p class="status" id="status"><span class="dot"></span> <span id="statusText"></span></p>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="progress-pct" id="progressPct">0%</p>
+      </div>
+
+      <div class="complete-screen" id="completeScreen">
+        <div class="check"><span class="heart">♥</span></div>
+        <h2 class="title" id="completeTitle"></h2>
+        <p class="subtitle" id="completeSubtitle"></p>
+        <p class="message" id="completeMessage"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== Text dictionary ==========
+    var TEXT = {
+      pageTitle: "Laimingos Valentino dienos!",
+      countdown: {
+        title: "Iki Valentino dienos liko",
+        labels: ["d.", "val.", "min.", "sek."]
+      },
+      proposal: {
+        question: "Ar būsi mano Valentina?",
+        yes: "TAIP",
+        no: "NE"
+      },
+      loader: {
+        title: "Diegiama amžina meilė",
+        steps: [
+          { text: "Ruošiama meilės programa...", progress: 8 },
+          { text: "Tikrinamas zodiako ženklų suderinimas...", progress: 18 },
+          { text: "Tikrinamas humoro jausmas...", progress: 28 },
+          { text: "Diegiamas sarkazmo modulis...", progress: 38 },
+          { text: "Tikrinamas artumo poreikis...", progress: 48 },
+          { text: "Vykdoma artumo terapija...", progress: 58 },
+          { text: "Dar daugiau artumo...", progress: 68 },
+          { text: "Siunčiama 'Puikybė ir prietarai'...", progress: 78 },
+          { text: "Užsakoma pica su alumi...", progress: 88 },
+          { text: "Ruošiamas šiltas guoliukas...", progress: 95 },
+          { text: "Užbaigta!", progress: 100 }
+        ]
+      },
+      complete: {
+        title: "Milda",
+        subtitle: "Ačiū, kad esi. Labai tave myliu!",
+        message: "Laimingos Valentino dienos! ♥"
+      },
+      stickyNotes: [
+        "Tu mano šiluma",
+        "Tu mano laimė",
+        "Tu mano džiaugsmas",
+        "Tu mano meilė",
+        "Tu mano viskas",
+        "Tu mano jaukumas",
+        "Tu mano ramybė",
+        "Tu mano kasdienos džiaugsmas",
+        "Tu mano namai",
+        "Tu mano ateitis",
+        "Tu mano pirmenybė",
+        "Tu mano saulė"
+      ]
+    };
+    // =================================================================
+
+    const stepDuration = 2800;
+
+    function applyTexts() {
+      document.title = TEXT.pageTitle;
+      document.getElementById("countdownTitle").textContent = TEXT.countdown.title;
+      var labels = document.getElementById("countdownLabels");
+      labels.innerHTML = TEXT.countdown.labels.map(function (l) { return "<span>" + l + "</span>"; }).join("");
+      document.getElementById("proposalQuestion").textContent = TEXT.proposal.question;
+      document.getElementById("yesBtn").textContent = TEXT.proposal.yes;
+      document.getElementById("noBtn").textContent = TEXT.proposal.no;
+      document.getElementById("loaderTitleText").textContent = TEXT.loader.title;
+      document.getElementById("statusText").textContent = TEXT.loader.steps[0].text;
+      document.getElementById("completeTitle").textContent = TEXT.complete.title;
+      document.getElementById("completeSubtitle").textContent = TEXT.complete.subtitle;
+      document.getElementById("completeMessage").textContent = TEXT.complete.message;
+    }
+    applyTexts();
+
+    function isValentinesDay() {
+      const now = new Date();
+      return now.getMonth() === 1 && now.getDate() === 14;
+    }
+
+    function getNextValentines() {
+      const now = new Date();
+      let next = new Date(now.getFullYear(), 1, 14);
+      if (now > next) next = new Date(now.getFullYear() + 1, 1, 14);
+      return next;
+    }
+
+    function updateCountdown() {
+      const next = getNextValentines();
+      const now = new Date();
+      const diff = next - now;
+      if (diff <= 0) {
+        showLoader();
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById("days").textContent = String(d).padStart(2, "0");
+      document.getElementById("hours").textContent = String(h).padStart(2, "0");
+      document.getElementById("mins").textContent = String(m).padStart(2, "0");
+      document.getElementById("secs").textContent = String(s).padStart(2, "0");
+    }
+
+    function showProposal() {
+      document.getElementById("countdownScreen").classList.remove("visible");
+      document.getElementById("proposalScreen").classList.add("visible");
+    }
+
+    function showLoader() {
+      document.getElementById("proposalScreen").classList.remove("visible");
+      document.getElementById("completeWrapper").classList.add("visible");
+      document.getElementById("loadingView").style.display = "block";
+      document.getElementById("completeScreen").classList.remove("visible");
+      document.getElementById("installScreen").classList.remove("red-theme");
+      document.body.classList.add("bw-phase");
+      document.body.classList.remove("red-phase");
+      setTimeout(runLoader, 400);
+    }
+
+    function runLoader() {
+      const statusText = document.getElementById("statusText");
+      const progressBar = document.getElementById("progressBar");
+      const progressPct = document.getElementById("progressPct");
+      const loadingView = document.getElementById("loadingView");
+      const completeScreen = document.getElementById("completeScreen");
+      let stepIndex = 0;
+
+      function runStep() {
+        if (stepIndex >= TEXT.loader.steps.length) {
+          loadingView.style.display = "none";
+          completeScreen.classList.add("visible");
+          document.getElementById("installScreen").classList.add("red-theme");
+          document.body.classList.remove("bw-phase");
+          document.body.classList.add("red-phase");
+          setTimeout(spawnStickyNotes, 500);
+          return;
+        }
+        const step = TEXT.loader.steps[stepIndex];
+        statusText.textContent = step.text;
+        progressBar.style.width = step.progress + "%";
+        progressPct.textContent = step.progress + "%";
+        stepIndex++;
+        setTimeout(runStep, stepDuration);
+      }
+      runStep();
+    }
+
+    function spawnStickyNotes() {
+      const container = document.getElementById("stickyNotes");
+      const installScreen = document.getElementById("installScreen");
+      const rect = installScreen.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const notes = TEXT.stickyNotes;
+      const n = notes.length;
+      const minRadius = Math.max(rect.width, rect.height) / 2 + 60;
+      const noteSpacing = 150;
+      const radius = Math.max(minRadius, (noteSpacing * n) / (2 * Math.PI));
+
+      notes.forEach(function (text, i) {
+        setTimeout(function () {
+          const note = document.createElement("div");
+          note.className = "sticky-note";
+          const angle = (i / n) * Math.PI * 2;
+          note.innerHTML = "<span class=\"heart\">♥</span>" + text;
+
+          const x = centerX + Math.cos(angle) * radius;
+          const y = centerY + Math.sin(angle) * radius;
+          note.style.left = x + "px";
+          note.style.top = y + "px";
+          note.style.setProperty("--rot", (Math.random() * 8 - 4) + "deg");
+
+          container.appendChild(note);
+        }, i * 400);
+      });
+    }
+
+    function setupNoButton() {
+      const noBtn = document.getElementById("noBtn");
+      const yesBtn = document.getElementById("yesBtn");
+      const padding = 60;
+      const halfW = 70;
+      const halfH = 24;
+      const minX = padding + halfW;
+      const maxX = window.innerWidth - padding - halfW;
+      const minY = padding + halfH;
+      const maxY = window.innerHeight - padding - halfH;
+
+      var homeX, homeY;
+      var noX, noY;
+
+      function setHomePosition() {
+        var r = yesBtn.getBoundingClientRect();
+        homeX = r.right + 20;
+        homeY = r.top + (r.height / 2);
+        homeX = Math.max(minX, Math.min(maxX, homeX));
+        homeY = Math.max(minY, Math.min(maxY, homeY));
+        noX = homeX;
+        noY = homeY;
+        noBtn.style.left = noX + "px";
+        noBtn.style.top = noY + "px";
+        noBtn.style.transform = "translate(-50%, -50%)";
+      }
+
+      function setNoPosition(px, py) {
+        noX = Math.max(minX, Math.min(maxX, px));
+        noY = Math.max(minY, Math.min(maxY, py));
+        noBtn.style.left = noX + "px";
+        noBtn.style.top = noY + "px";
+        noBtn.style.transform = "translate(-50%, -50%)";
+      }
+
+      var fleeRadius = 120;
+      var stepFlee = 18;
+      var stepReturn = 8;
+
+      function hideNoButton() {
+        noBtn.style.display = "none";
+        document.removeEventListener("mousemove", moveAwayFrom);
+        document.removeEventListener("touchmove", onTouchMove);
+      }
+
+      function moveAwayFrom(e) {
+        var mx = e.clientX;
+        var my = e.clientY;
+        var dx = noX - mx;
+        var dy = noY - my;
+        var distToCursor = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        if (distToCursor < fleeRadius) {
+          var nx = noX + (dx / distToCursor) * stepFlee;
+          var ny = noY + (dy / distToCursor) * stepFlee;
+          setNoPosition(nx, ny);
+        } else {
+          var toHomeX = homeX - noX;
+          var toHomeY = homeY - noY;
+          var distHome = Math.sqrt(toHomeX * toHomeX + toHomeY * toHomeY);
+          if (distHome > 4) {
+            var step = Math.min(stepReturn, distHome);
+            var nx = noX + (toHomeX / distHome) * step;
+            var ny = noY + (toHomeY / distHome) * step;
+            setNoPosition(nx, ny);
+          }
+        }
+      }
+
+      function onTouchMove(e) {
+        if (e.touches.length) moveAwayFrom(e.touches[0]);
+      }
+
+      noBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        hideNoButton();
+      });
+
+      requestAnimationFrame(function () {
+        setHomePosition();
+      });
+      document.addEventListener("mousemove", moveAwayFrom);
+      document.addEventListener("touchmove", onTouchMove, { passive: true });
+    }
+
+    document.getElementById("yesBtn").addEventListener("click", showLoader);
+
+    if (isValentinesDay()) {
+      document.getElementById("countdownScreen").classList.remove("visible");
+      document.getElementById("proposalScreen").classList.add("visible");
+      setupNoButton();
+    } else {
+      document.getElementById("countdownScreen").classList.add("visible");
+      document.getElementById("proposalScreen").classList.remove("visible");
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+  </script>
+</body>
+</html>
