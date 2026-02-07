@@ -117,12 +117,15 @@
     .install-screen {
       width: 400px;
       max-width: 100%;
+      min-width: 320px;
       min-height: 220px;
       background: #0f0f0f;
       border-radius: 12px;
       padding: 1.75rem;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
       border: 1px solid #2a2a2a;
+      overflow: hidden;
+      flex-shrink: 0;
     }
     .install-screen h1 {
       font-size: 1.1rem;
@@ -150,6 +153,8 @@
       overflow: hidden;
       min-width: 0;
       line-height: 1.3;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     .status .dot {
       display: inline-block;
@@ -265,6 +270,113 @@
       to {
         opacity: 1;
         transform: scale(1) rotate(var(--rot, -3deg));
+      }
+    }
+
+    /* ----- Mobile-friendly ----- */
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .countdown-screen h1 {
+        font-size: 1.1rem;
+        margin-bottom: 1.25rem;
+      }
+      .countdown-timer {
+        font-size: 1.6rem;
+        margin-bottom: 0.75rem;
+      }
+      .countdown-timer span {
+        min-width: 2ch;
+      }
+      .countdown-labels {
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .proposal-screen {
+        max-width: 100%;
+      }
+      .proposal-screen h1 {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+        padding: 0 0.5rem;
+      }
+      .proposal-buttons {
+        min-height: 80px;
+      }
+      .proposal-btn {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 0.85rem 1.5rem;
+        font-size: 1rem;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .install-screen {
+        width: calc(100vw - 2rem);
+        max-width: 100%;
+        padding: 1.25rem;
+        min-height: 200px;
+      }
+      .install-screen h1 {
+        font-size: 1rem;
+      }
+      .status {
+        font-size: 0.8rem;
+        height: 2.4em;
+      }
+      .complete-screen .check {
+        font-size: 2.5rem;
+      }
+      .complete-screen .title {
+        font-size: 1.2rem;
+      }
+      .complete-screen .subtitle {
+        font-size: 0.95rem;
+      }
+      .complete-screen .message {
+        font-size: 1rem;
+        max-width: 100%;
+        padding: 0 0.5rem;
+      }
+      .sticky-note {
+        width: 110px;
+        padding: 0.5rem 0.65rem;
+        font-size: 0.75rem;
+        margin-left: -55px;
+        margin-top: -22px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .countdown-timer {
+        font-size: 1.4rem;
+      }
+      .proposal-screen h1 {
+        font-size: 1.1rem;
+      }
+      .sticky-note {
+        width: 95px;
+        font-size: 0.7rem;
+        margin-left: -48px;
+        margin-top: -18px;
+      }
+    }
+
+    /* Safe area for notched devices */
+    body {
+      padding-left: max(1.5rem, env(safe-area-inset-left));
+      padding-right: max(1.5rem, env(safe-area-inset-right));
+      padding-top: max(1.5rem, env(safe-area-inset-top));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+    @media (max-width: 600px) {
+      body {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
       }
     }
   </style>
@@ -458,26 +570,88 @@
       const centerY = rect.top + rect.height / 2;
       const notes = TEXT.stickyNotes;
       const n = notes.length;
-      const minRadius = Math.max(rect.width, rect.height) / 2 + 60;
-      const noteSpacing = 150;
-      const radius = Math.max(minRadius, (noteSpacing * n) / (2 * Math.PI));
+      const isNarrow = window.innerWidth <= 600;
+      const noteW = isNarrow ? 110 : 130;
+      const noteH = isNarrow ? 44 : 56;
+      const padding = 16;
 
-      notes.forEach(function (text, i) {
-        setTimeout(function () {
-          const note = document.createElement("div");
-          note.className = "sticky-note";
-          const angle = (i / n) * Math.PI * 2;
-          note.innerHTML = "<span class=\"heart\">♥</span>" + text;
+      if (isNarrow) {
+        var topCount = Math.ceil(n / 2);
+        var bottomCount = n - topCount;
+        var topZoneTop = padding;
+        var topZoneBottom = rect.top - padding;
+        var topZoneH = Math.max(noteH, topZoneBottom - topZoneTop - noteH);
+        var bottomZoneTop = rect.bottom + padding;
+        var bottomZoneBottom = window.innerHeight - padding;
+        var bottomZoneH = Math.max(noteH, bottomZoneBottom - bottomZoneTop - noteH);
+        var zoneW = Math.max(noteW, window.innerWidth - padding * 2 - noteW);
 
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-          note.style.left = x + "px";
-          note.style.top = y + "px";
-          note.style.setProperty("--rot", (Math.random() * 8 - 4) + "deg");
+        function gridPosition(index, count, zoneWidth, zoneHeight, zoneX0, zoneY0) {
+          var cols = Math.max(1, Math.min(count, Math.floor(zoneWidth / (noteW + 10))));
+          var rows = Math.ceil(count / cols);
+          var cellW = zoneWidth / cols;
+          var cellH = zoneHeight / rows;
+          var col = index % cols;
+          var row = Math.floor(index / cols);
+          var gridX = zoneX0 + noteW / 2 + (col + 0.5) * cellW;
+          var gridY = zoneY0 + noteH / 2 + (row + 0.5) * cellH;
+          var jitter = 0.4;
+          var jitterX = (Math.random() - 0.5) * cellW * jitter;
+          var jitterY = (Math.random() - 0.5) * cellH * jitter;
+          var x = Math.max(zoneX0 + noteW / 2, Math.min(zoneX0 + zoneWidth - noteW / 2, gridX + jitterX));
+          var y = Math.max(zoneY0 + noteH / 2, Math.min(zoneY0 + zoneHeight - noteH / 2, gridY + jitterY));
+          return { x: x, y: y };
+        }
 
-          container.appendChild(note);
-        }, i * 400);
-      });
+        var topZoneX0 = padding;
+        var topZoneY0 = topZoneTop;
+        var bottomZoneX0 = padding;
+        var bottomZoneY0 = bottomZoneTop;
+
+        notes.forEach(function (text, i) {
+          setTimeout(function () {
+            const note = document.createElement("div");
+            note.className = "sticky-note";
+            note.innerHTML = "<span class=\"heart\">♥</span>" + text;
+            var pos;
+            if (i < topCount) {
+              pos = gridPosition(i, topCount, zoneW, topZoneH, topZoneX0, topZoneY0);
+            } else {
+              pos = gridPosition(i - topCount, bottomCount, zoneW, bottomZoneH, bottomZoneX0, bottomZoneY0);
+            }
+            note.style.left = pos.x + "px";
+            note.style.top = pos.y + "px";
+            note.style.setProperty("--rot", (Math.random() * 8 - 4) + "deg");
+            container.appendChild(note);
+          }, i * 350);
+        });
+      } else {
+        const minRadius = Math.max(rect.width, rect.height) / 2 + 60;
+        const noteSpacing = 150;
+        let radius = Math.max(minRadius, (noteSpacing * n) / (2 * Math.PI));
+        const maxRadiusX = (window.innerWidth - noteW - padding * 2) / 2;
+        const maxRadiusY = (window.innerHeight - noteH - padding * 2) / 2;
+        radius = Math.min(radius, maxRadiusX, maxRadiusY);
+
+        notes.forEach(function (text, i) {
+          setTimeout(function () {
+            const note = document.createElement("div");
+            note.className = "sticky-note";
+            const angle = (i / n) * Math.PI * 2;
+            note.innerHTML = "<span class=\"heart\">♥</span>" + text;
+
+            let x = centerX + Math.cos(angle) * radius;
+            let y = centerY + Math.sin(angle) * radius;
+            x = Math.max(noteW / 2 + padding, Math.min(window.innerWidth - noteW / 2 - padding, x));
+            y = Math.max(noteH / 2 + padding, Math.min(window.innerHeight - noteH / 2 - padding, y));
+            note.style.left = x + "px";
+            note.style.top = y + "px";
+            note.style.setProperty("--rot", (Math.random() * 8 - 4) + "deg");
+
+            container.appendChild(note);
+          }, i * 400);
+        });
+      }
     }
 
     function setupNoButton() {
@@ -519,10 +693,12 @@
       var stepFlee = 18;
       var stepReturn = 8;
 
-      function hideNoButton() {
-        noBtn.style.display = "none";
-        document.removeEventListener("mousemove", moveAwayFrom);
-        document.removeEventListener("touchmove", onTouchMove);
+      function jumpToRandomSide() {
+        var angle = Math.random() * Math.PI * 2;
+        var jump = 140;
+        var nx = noX + Math.cos(angle) * jump;
+        var ny = noY + Math.sin(angle) * jump;
+        setNoPosition(nx, ny);
       }
 
       function moveAwayFrom(e) {
@@ -555,7 +731,7 @@
 
       noBtn.addEventListener("click", function (e) {
         e.preventDefault();
-        hideNoButton();
+        jumpToRandomSide();
       });
 
       requestAnimationFrame(function () {
