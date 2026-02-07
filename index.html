@@ -576,6 +576,14 @@
       document.getElementById("proposalScreen").classList.remove("visible");
       updateCountdown();
       setInterval(updateCountdown, 1000);
+      var timerClicks = 0;
+      document.getElementById("countdownTimer").addEventListener("click", function () {
+        timerClicks++;
+        if (timerClicks >= 10) {
+          showProposal();
+          setupNoButton();
+        }
+      });
     }
   </script>
 </body>
