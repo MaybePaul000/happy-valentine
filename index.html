@@ -257,9 +257,27 @@
       pointer-events: none;
       overflow: hidden;
     }
-    .complete-wrapper.last-page-view .last-page-bg,
+    .complete-wrapper.last-page-view .last-page-bg {
+      display: block;
+      opacity: 0;
+      animation: lastPageBgReveal 1.8s ease-out 0.25s forwards;
+    }
     .complete-wrapper.last-page-view .hearts-bg {
       display: block;
+      opacity: 0;
+      animation: lastPageBgReveal 1.4s ease-out 0.5s forwards;
+    }
+    @keyframes lastPageBgReveal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .complete-wrapper.last-page-view .complete-screen.visible {
+      animation: lastPageContentReveal 0.9s ease-out 1s forwards;
+      opacity: 0;
+    }
+    @keyframes lastPageContentReveal {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
     }
     .complete-wrapper.last-page-view .sticky-notes {
       z-index: 2;
@@ -620,7 +638,7 @@
           document.body.classList.add("red-phase");
           document.getElementById("completeWrapper").classList.add("last-page-view");
           startFlyingHearts();
-          setTimeout(spawnStickyNotes, 500);
+          setTimeout(spawnStickyNotes, 1200);
           return;
         }
         const step = TEXT.loader.steps[stepIndex];
