@@ -196,9 +196,9 @@
       display: block;
     }
     .install-screen.red-theme {
-      background: rgba(74, 21, 32, 0.95);
-      border: 1px solid rgba(180, 80, 90, 0.3);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      background: rgba(55, 22, 28, 0.92);
+      border: 1px solid rgba(160, 100, 110, 0.4);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(200, 150, 160, 0.08);
     }
     .complete-screen {
       display: none;
@@ -224,22 +224,85 @@
     .complete-screen .title {
       font-size: 1.35rem;
       font-weight: 600;
-      color: #ffd4dc;
+      color: #f5e6e8;
       margin: 0 0 0.5rem 0;
     }
     .complete-screen .subtitle {
       font-size: 1rem;
-      color: #e8a0a8;
+      color: #e8c8cc;
       margin: 0 0 1.5rem 0;
       line-height: 1.5;
     }
     .complete-screen .message {
       font-size: 1.1rem;
-      color: #ffdce4;
+      color: #f0dce0;
       line-height: 1.6;
       max-width: 320px;
       margin: 0 auto;
     }
+    /* ----- Last page background & flying hearts ----- */
+    .last-page-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: url("background.png") center/cover no-repeat;
+      pointer-events: none;
+    }
+    .hearts-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .complete-wrapper.last-page-view .last-page-bg,
+    .complete-wrapper.last-page-view .hearts-bg {
+      display: block;
+    }
+    .complete-wrapper.last-page-view .sticky-notes {
+      z-index: 2;
+    }
+    .complete-wrapper.last-page-view .install-screen {
+      position: relative;
+      z-index: 2;
+    }
+    .flying-heart {
+      position: absolute;
+      font-size: 1.2rem;
+      color: rgba(255, 182, 193, 0.85);
+      opacity: 0;
+      animation: heartFloat 8s ease-in-out forwards;
+      text-shadow: 0 0 8px rgba(255, 182, 193, 0.3);
+    }
+    .flying-heart.outline {
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(255, 182, 193, 0.7);
+    }
+    @keyframes heartFloat {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+      }
+      8% {
+        opacity: 0.9;
+      }
+      15% {
+        opacity: 0.9;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      92% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(var(--scale));
+      }
+    }
+
     /* ----- Sticky notes (reddish, no overlap) ----- */
     .sticky-notes {
       position: fixed;
@@ -252,9 +315,9 @@
       padding: 0.6rem 0.85rem;
       font-size: 0.85rem;
       font-weight: 500;
-      color: #fff;
-      background: #c45c4a;
-      box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.2);
+      color: #2d1518;
+      background: #e8c4bc;
+      box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.15), 0 1px 0 rgba(255, 255, 255, 0.2);
       border-radius: 2px;
       width: 130px;
       opacity: 0;
@@ -263,8 +326,12 @@
       margin-left: -65px;
       margin-top: -28px;
     }
+    .sticky-note:nth-child(3n) { background: #d9b0a8; }
+    .sticky-note:nth-child(3n+1) { background: #e8c4bc; }
+    .sticky-note:nth-child(3n+2) { background: #e0b8b0; }
     .sticky-note .heart {
       margin-right: 0.25rem;
+      color: #8b4040;
     }
     @keyframes stickyAppear {
       to {
@@ -399,6 +466,8 @@
   </div>
 
   <div class="complete-wrapper" id="completeWrapper">
+    <div class="last-page-bg" id="lastPageBg"></div>
+    <div class="hearts-bg" id="heartsBg"></div>
     <div class="sticky-notes" id="stickyNotes"></div>
     <div class="install-screen" id="installScreen">
       <div class="loading-view" id="loadingView">
@@ -549,6 +618,8 @@
           document.getElementById("installScreen").classList.add("red-theme");
           document.body.classList.remove("bw-phase");
           document.body.classList.add("red-phase");
+          document.getElementById("completeWrapper").classList.add("last-page-view");
+          startFlyingHearts();
           setTimeout(spawnStickyNotes, 500);
           return;
         }
@@ -560,6 +631,54 @@
         setTimeout(runStep, stepDuration);
       }
       runStep();
+    }
+
+    function startFlyingHearts() {
+      var container = document.getElementById("heartsBg");
+      if (!container) return;
+      var heartChars = ["♥", "♡"];
+      var maxHearts = 200;
+      var activeHearts = 0;
+      var spawnInterval = 100;
+
+      function createHeart() {
+        if (activeHearts >= maxHearts) return;
+        var heart = document.createElement("div");
+        heart.className = "flying-heart" + (Math.random() > 0.6 ? " outline" : "");
+        heart.textContent = heartChars[Math.floor(Math.random() * heartChars.length)];
+        var size = 0.7 + Math.random() * 1.2;
+        heart.style.fontSize = (size * 1.2) + "rem";
+        var colors = ["rgba(255, 182, 193, 0.9)", "rgba(255, 192, 203, 0.85)", "rgba(255, 218, 224, 0.8)", "rgba(255, 160, 180, 0.85)"];
+        if (!heart.classList.contains("outline")) {
+          heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+        var startX = Math.random() * 100;
+        var startY = Math.random() * 100;
+        var dx = (Math.random() - 0.5) * 180;
+        var dy = (Math.random() - 0.5) * 180 - 40;
+        heart.style.left = startX + "%";
+        heart.style.top = startY + "%";
+        heart.style.setProperty("--dx", dx + "px");
+        heart.style.setProperty("--dy", dy + "px");
+        heart.style.setProperty("--scale", 0.4 + Math.random() * 0.8);
+        var duration = 6 + Math.random() * 5;
+        heart.style.animationDuration = duration + "s";
+        heart.style.animationDelay = (Math.random() * 0.5) + "s";
+        activeHearts++;
+        container.appendChild(heart);
+        heart.addEventListener("animationend", function () {
+          if (heart.parentNode) heart.parentNode.removeChild(heart);
+          activeHearts--;
+        });
+      }
+
+      function tick() {
+        createHeart();
+      }
+      var intervalId = setInterval(tick, spawnInterval);
+      for (var i = 0; i < 30; i++) {
+        setTimeout(createHeart, i * 50);
+      }
     }
 
     function spawnStickyNotes() {
